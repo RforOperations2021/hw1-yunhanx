@@ -33,7 +33,9 @@ ui <- fluidPage(
                       choices = c("Age" = "AGE", 
                                   "Incident Zone" = "INCIDENTZONE", 
                                   "Council District" = "COUNCIL_DISTRICT", 
-                                  "Public Works Division" = "PUBLIC_WORKS_DIVISION"), 
+                                  "Public Works Division" = "PUBLIC_WORKS_DIVISION",
+                                  "Longitude" = "X",
+                                  "Latitude" = "Y"), 
                       selected = "INCIDENTZONE"),
             
             # Select variable for x-axis ----------------------------------
@@ -42,7 +44,9 @@ ui <- fluidPage(
                       choices = c("Age" = "AGE", 
                                   "Incident Zone" = "INCIDENTZONE", 
                                   "Council District" = "COUNCIL_DISTRICT", 
-                                  "Public Works Division" = "PUBLIC_WORKS_DIVISION"), 
+                                  "Public Works Division" = "PUBLIC_WORKS_DIVISION",
+                                  "Longitude" = "X",
+                                  "Latitude" = "Y"), 
                       selected = "AGE"),
             
             # Select variable for color -----------------------------------
@@ -51,6 +55,10 @@ ui <- fluidPage(
                       choices = c("Gender" = "GENDER", 
                                   "Race" = "RACE"),
                       selected = "RACE"),
+            # Show data table ---------------------------------------------
+            checkboxInput(inputId = "show_data",
+                          label = "Show data table",
+                          value = TRUE),
             # Set alpha level ---------------------------------------------
             sliderInput(inputId = "alpha",
                         label = "Alpha:",
@@ -69,7 +77,9 @@ ui <- fluidPage(
         mainPanel(
           # Show scatterplot --------------------------------------------
           plotOutput(outputId = "scatterplot"),
-          br(),       
+          br(),     
+          # Show data table ---------------------------------------------
+          DT::dataTableOutput(outputId = "policetable")
 
         )
     )
@@ -95,6 +105,14 @@ server <- function(input, output) {
            title = ""
       )
   })
+  # Print data table if checked -------------------------------------
+  output$policetable <- DT::renderDataTable(
+    if(input$show_data){
+      DT::datatable(data = police[, 1:5], 
+                    options = list(pageLength = 10), 
+                    rownames = FALSE)
+    }
+  )
 
 }
 
