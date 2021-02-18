@@ -70,6 +70,7 @@ ui <- fluidPage(
                         label = "Size:",
                         min = 0, max = 5,
                         value = 2),
+            downloadLink('downloadData', 'Download'),
             
         ),
 
@@ -111,6 +112,14 @@ server <- function(input, output) {
       DT::datatable(data = police[, 1:5], 
                     options = list(pageLength = 10), 
                     rownames = FALSE)
+    }
+  )
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      paste('data-', Sys.Date(), '.csv', sep='')
+    },
+    content = function(con) {
+      write.csv(police, con)
     }
   )
 
