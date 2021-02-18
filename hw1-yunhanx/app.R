@@ -64,12 +64,22 @@ ui <- fluidPage(
                         label = "Alpha:",
                         min = 0, max = 1,
                         value = 0.5),
+            # Select sample size ----------------------------------------------------
+            numericInput(inputId = "n_samp", 
+                         label = "Sample size:", 
+                         min = 1, max = nrow(police), 
+                         value = 50),
             
             # Set point size ----------------------------------------------
             sliderInput(inputId = "size",
                         label = "Size:",
                         min = 0, max = 5,
                         value = 2),
+            # Select which types of movies to plot ------------------------
+            checkboxGroupInput(inputId = "selected_type",
+                               label = "Select year(s):",
+                               choices = c("2021", "2020"),
+                               selected = "2020"),
             downloadLink('downloadData', 'Download'),
             
         ),
@@ -86,18 +96,30 @@ ui <- fluidPage(
     )
 )
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
+# Define server logic required
+server <- function(input, output, session) {
   # Create a subset of data filtering for selected title types ------
   police_subset <- reactive({
     req(input$selected_type) # ensure availablity of value before proceeding
-    filter(police, title_type %in% input$selected_type)
+    filter(police, YEAR %in% input$selected_type)
   })
 
-
+  # Update the maximum allowed n_samp for selected type movies ------
+  observe({
+    updateNumericInput(session, 
+                       inputId = "n_samp",
+                       value = min(50, nrow(police_subset())),
+                       max = nrow(police_subset())
+    )
+  })
+  # Create new df that is n_samp obs from selected type movies ------
+  police_sample <- reactive({ 
+    req(input$n_samp) # ensure availablity of value before proceeding
+    sample_n(police_subset(), input$n_samp)
+  })
   # Create scatterplot object the plotOutput function is expecting --
   output$scatterplot <- renderPlot({
-    ggplot(data = police, aes_string(x = input$x, y = input$y,
+    ggplot(data = police_sample(), aes_string(x = input$x, y = input$y,
                                               color = input$z)) +
       geom_point(alpha = input$alpha, size = input$size) +
       labs(x = input$x,
@@ -106,10 +128,11 @@ server <- function(input, output) {
            title = ""
       )
   })
+
   # Print data table if checked -------------------------------------
   output$policetable <- DT::renderDataTable(
     if(input$show_data){
-      DT::datatable(data = police[, 1:5], 
+      DT::datatable(data = police[, 2:6], 
                     options = list(pageLength = 10), 
                     rownames = FALSE)
     }
